@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hankley Common Golf Club – 2025 Matches Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f4f6f9; color: #333; }
+
+  header {
+    background: linear-gradient(135deg, #1a3c2e 0%, #2d6a4f 100%);
+    color: white;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  header .logo { font-size: 36px; }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+
+  .kpi-bar {
+    display: flex;
+    gap: 16px;
+    padding: 20px 32px;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+  }
+  .kpi {
+    flex: 1;
+    min-width: 150px;
+    background: #f8faf8;
+    border: 1px solid #d4e8d8;
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+  .kpi .val { font-size: 28px; font-weight: 700; color: #1a3c2e; }
+  .kpi .lbl { font-size: 11px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    background: white;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  .tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: #2d6a4f; }
+  .tab.active { color: #1a3c2e; border-bottom-color: #2d6a4f; }
+
+  .content { padding: 24px 32px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
+  }
+  .card.full { grid-column: 1 / -1; }
+  .card h3 { font-size: 14px; font-weight: 700; color: #1a3c2e; margin-bottom: 4px; }
+  .card .subtitle { font-size: 11px; color: #888; margin-bottom: 16px; }
+  .chart-wrap { position: relative; }
+
+  /* Gender comparison panel */
+  .gender-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f8faf8;
+  }
+  .gender-row .icon { font-size: 24px; width: 36px; text-align: center; }
+  .gender-row .info { flex: 1; }
+  .gender-row .info .name { font-weight: 700; font-size: 14px; }
+  .gender-row .info .bars { margin-top: 6px; }
+  .bar-track { background: #e8f0eb; border-radius: 4px; height: 8px; margin: 3px 0; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-label { font-size: 11px; color: #555; display: flex; justify-content: space-between; }
+  .diff-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .diff-over { background: #e8f5e9; color: #2d6a4f; }
+  .diff-under { background: #fce4ec; color: #c62828; }
+  .diff-none { background: #f5f5f5; color: #555; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #1a3c2e;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  tbody tr:nth-child(even) { background: #f8faf8; }
+  tbody tr:hover { background: #e8f5e9; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+  .sector-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-men { background: #dbeafe; color: #1e40af; }
+  .badge-ladies { background: #fce7f3; color: #9d174d; }
+  .badge-mixed { background: #fef3c7; color: #92400e; }
+  .badge-elders { background: #d1fae5; color: #065f46; }
+
+  /* Note box */
+  .note {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #78350f;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 800px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .kpi-bar { flex-direction: column; }
+    .tabs { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⛳</div>
+  <div>
+    <h1>Hankley Common Golf Club — 2025 Matches Analysis</h1>
+    <p>Rounds by sector and month · Comparison vs membership split · Mixed matches divided equally between Men and Women</p>
+  </div>
+</header>
+
+<div class="kpi-bar">
+  <div class="kpi"><div class="val">1,688</div><div class="lbl">Total Rounds</div></div>
+  <div class="kpi"><div class="val">642</div><div class="lbl">Total Members</div></div>
+  <div class="kpi"><div class="val">7</div><div class="lbl">Sectors</div></div>
+  <div class="kpi"><div class="val">1,224</div><div class="lbl">Men's Rounds (incl. ½ Mixed)</div></div>
+  <div class="kpi"><div class="val">464</div><div class="lbl">Ladies' Rounds (incl. ½ Mixed)</div></div>
+  <div class="kpi"><div class="val">2.49×</div><div class="lbl">Men : Ladies Ratio (rounds)</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">Overview</div>
+  <div class="tab" onclick="showTab('monthly')">Monthly Trends</div>
+  <div class="tab" onclick="showTab('gender')">Gender vs Membership</div>
+  <div class="tab" onclick="showTab('perhead')">Rounds per Head</div>
+  <div class="tab" onclick="showTab('details')">Match Details</div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════ TAB: OVERVIEW ═══════════════════ -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="note">
+    ℹ️ <strong>Mixed match rule:</strong> "Men v Ladies" (28 rounds) and "Mixed" (188 rounds) are each split 50/50 between Men and Women in all gender calculations.
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Rounds by Sector</h3>
+      <div class="subtitle">Total rounds played in each club section</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartSector"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Gender Split — Actual vs Membership</h3>
+      <div class="subtitle">How rounds allocation compares to membership proportions</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartGenderPie"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Rounds Allocated vs Membership-Proportionate Target</h3>
+      <div class="subtitle">Expected rounds if allocation matched membership share exactly</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartTarget"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Sector Gender Composition</h3>
+      <div class="subtitle">Breakdown of each sector's gender classification</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartSectorGender"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: MONTHLY ═══════════════════ -->
+<div id="tab-monthly" class="tab-panel">
+  <div class="grid-2" style="margin-bottom:20px">
+    <div class="card full">
+      <h3>Monthly Rounds by Sector</h3>
+      <div class="subtitle">All sectors shown individually — Elders, Scratch, Senior Scratch, Mens, Ladies, Mixed, Men v Ladies</div>
+      <div class="chart-wrap" style="height:340px">
+        <canvas id="chartMonthlyGender"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Men's Sections Monthly Breakdown</h3>
+      <div class="subtitle">Elders · Scratch · Senior Scratch · Mens — how each section contributes month by month</div>
+      <div class="chart-wrap" style="height:320px">
+        <canvas id="chartMonthlySector"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Monthly Totals</h3>
+      <div class="subtitle">Total rounds played each month</div>
+      <div class="chart-wrap" style="height:320px">
+        <canvas id="chartMonthlyTotal"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: GENDER vs MEMBERSHIP ═══════════════════ -->
+<div id="tab-gender" class="tab-panel">
+  <div class="note">
+    Mixed matches (216 rounds total) are divided equally: 108 rounds attributed to Men, 108 to Ladies.
+    Membership: <strong>497 men</strong> (77.4%) and <strong>145 ladies</strong> (22.6%) — total 642.
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <h3>Gender Allocation vs Membership Entitlement</h3>
+    <div class="subtitle">Green bar = actual rounds allocated · Grey bar = rounds if proportional to membership · Badge = over/under vs membership share</div>
+    <br>
+
+    <div class="gender-row">
+      <div class="icon">👨</div>
+      <div class="info">
+        <div class="name">Men &nbsp;<small style="font-weight:400;color:#666;">497 members · 77.4% of club</small></div>
+        <div class="bars">
+          <div class="bar-label"><span>Actual: 1,224 rounds (72.5%)</span><span>Expected: 1,307 rounds (77.4%)</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:72.5%;background:#2d6a4f"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:77.4%;background:#aaa"></div></div>
+        </div>
+      </div>
+      <div class="diff-badge diff-under">−83 rounds<br>−4.9 ppts</div>
+    </div>
+
+    <div class="gender-row">
+      <div class="icon">👩</div>
+      <div class="info">
+        <div class="name">Ladies &nbsp;<small style="font-weight:400;color:#666;">145 members · 22.6% of club</small></div>
+        <div class="bars">
+          <div class="bar-label"><span>Actual: 464 rounds (27.5%)</span><span>Expected: 381 rounds (22.6%)</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:27.5%;background:#9d174d"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:22.6%;background:#aaa"></div></div>
+        </div>
+      </div>
+      <div class="diff-badge diff-over">+83 rounds<br>+4.9 ppts</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Rounds % vs Membership %</h3>
+      <div class="subtitle">Side-by-side comparison — actual rounds share vs membership share</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartGenderComp"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Rounds per Member by Gender</h3>
+      <div class="subtitle">Average rounds played per member in each gender group</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartPerMember"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: PER HEAD ═══════════════════ -->
+<div id="tab-perhead" class="tab-panel">
+  <div class="note">
+    ℹ️ <strong>Denominator used per sector:</strong> "Potential Interest" figures from Matches per Head file (col D) — Elders ÷ 200 · Scratch ÷ 90 · Senior Scratch ÷ 46 · Mens ÷ 449 · Ladies ÷ 132 · Mixed ÷ 167.
+    Mixed sector rounds are <em>not</em> halved here — full rounds are divided by the eligible pool, showing how many rounds each mixed-eligible member benefits from.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px">
+    <div class="card full">
+      <h3>Rounds per Eligible Member — by Sector</h3>
+      <div class="subtitle">Total rounds ÷ Potential Interest players (Matches per Head, col D). Sorted highest to lowest.</div>
+      <div class="chart-wrap" style="height:300px">
+        <canvas id="chartPerHead"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Monthly Rounds per Head — Men's Sections</h3>
+      <div class="subtitle">Elders · Scratch · Senior Scratch · Mens — each section's rounds ÷ 497 men, by month</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartPerHeadMonthlyMen"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Monthly Rounds per Head — Ladies' Competitions</h3>
+      <div class="subtitle">Each ladies' competition type ÷ 145 members, by month</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartPerHeadMonthlyLadies"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Rounds per Head — Full Summary Table</h3>
+    <div class="subtitle">Eligible members, total rounds, rounds per head, and peak month for each sector</div>
+    <br>
+    <table>
+      <thead>
+        <tr>
+          <th>Sector</th>
+          <th>Gender</th>
+          <th>Eligible Members</th>
+          <th>Total Rounds</th>
+          <th>Rounds per Head</th>
+          <th>Peak Month</th>
+          <th>Peak Month Rounds</th>
+          <th>Peak Rounds / Head</th>
+        </tr>
+      </thead>
+      <tbody id="perHeadTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Rounds per Registered Player by Sector</h3>
+    <div class="subtitle">Source: Matches per Head analysis · Registered = actively signed up · Eligible = total who could play · Mixed combines Men v Ladies + Mixed sections (216 rounds total)</div>
+    <div class="chart-wrap" style="height:300px;margin-bottom:16px">
+      <canvas id="chartRegPlayers"></canvas>
+    </div>
+    <div class="chart-wrap" style="height:260px">
+      <canvas id="chartRegVsEligible"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Registered & Eligible Players — Full Breakdown</h3>
+    <div class="subtitle">Registered = actively on squad/list · Eligible = wider pool who could play · Rating from club's own assessment</div>
+    <br>
+    <table>
+      <thead>
+        <tr>
+          <th>Sector</th>
+          <th>Total Rounds</th>
+          <th>Registered Players</th>
+          <th>Eligible Players</th>
+          <th>Rds / Registered</th>
+          <th>Rds / Eligible</th>
+          <th>Allocation Rating</th>
+        </tr>
+      </thead>
+      <tbody id="regPlayersTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Gender-Level Rounds per Head vs Membership</h3>
+    <div class="subtitle">Aggregated: how many rounds per member does each gender group receive in total?</div>
+    <br>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div class="gender-row" style="flex:1;min-width:200px">
+        <div class="icon">👨</div>
+        <div class="info">
+          <div class="name">Men — 497 members</div>
+          <div style="font-size:13px;margin-top:6px;color:#555">
+            1,224 rounds total &nbsp;→&nbsp; <strong style="font-size:18px;color:#1565c0">2.46</strong> <span style="color:#888">rounds per man</span>
+          </div>
+        </div>
+      </div>
+      <div class="gender-row" style="flex:1;min-width:200px">
+        <div class="icon">👩</div>
+        <div class="info">
+          <div class="name">Ladies — 145 members</div>
+          <div style="font-size:13px;margin-top:6px;color:#555">
+            464 rounds total &nbsp;→&nbsp; <strong style="font-size:18px;color:#b5006a">3.20</strong> <span style="color:#888">rounds per lady</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: DETAILS ═══════════════════ -->
+<div id="tab-details" class="tab-panel">
+  <div class="card">
+    <h3>All Matches — Full Detail</h3>
+    <div class="subtitle">Every competition and friendly by sector, description, and month</div>
+    <br>
+    <table>
+      <thead>
+        <tr>
+          <th>Sector</th>
+          <th>Gender</th>
+          <th>Description</th>
+          <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th>
+          <th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="detailsTable"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+// ──────────────────────────────────────────
+// DATA
+// ──────────────────────────────────────────
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const matches = [
+  // Elders
+  { sector:'Elders', gender:'Men', desc:'Heathland',           rounds:[20,40, 0, 0, 0,  0,  0,  0,  0,  0,20, 0] },
+  { sector:'Elders', gender:'Men', desc:'Friendly',            rounds:[ 0, 0,92,28,52,144, 64, 52, 84, 84, 0, 0] },
+  // Ladies
+  { sector:'Ladies', gender:'Ladies', desc:'University',       rounds:[ 0, 8, 0, 0, 0,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Daily Mail 4\'somes', rounds:[ 0, 2, 0, 0, 0, 0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Surrey 2nd Team',  rounds:[ 0, 0,16, 0, 0,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Wallis',           rounds:[ 0, 0,10, 0,10,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Hicks',            rounds:[ 0, 0,10, 0, 0, 10,  0,  0,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Centenary Bowl',   rounds:[ 0, 0, 0,10,10,  0,  0, 20,  0,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Hindhead Salver',  rounds:[ 0, 0, 0,10, 0,  0,  0, 10, 10,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Business Ladies',  rounds:[ 0, 0, 0, 0,16,  0, 16,  0, 16,  0, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Friendly',         rounds:[ 0, 0, 0, 0, 0, 32, 30, 16, 40, 36, 0, 0] },
+  { sector:'Ladies', gender:'Ladies', desc:'Derry Cup',        rounds:[ 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,12, 6] },
+  // Scratch
+  { sector:'Scratch', gender:'Men', desc:'University',         rounds:[ 0,36, 0, 0, 0,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Scratch', gender:'Men', desc:'Surrey League',      rounds:[ 0, 0,10, 0, 0,  0,  0, 10,  0,  0, 0, 0] },
+  { sector:'Scratch', gender:'Men', desc:'Friendly',           rounds:[ 0, 0,16, 0,16,  0,  0,  0,  0, 36, 0, 0] },
+  { sector:'Scratch', gender:'Men', desc:'Friendly League',    rounds:[ 0, 0, 0,32, 0,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Scratch', gender:'Men', desc:'Border League',      rounds:[ 0, 0, 0, 0, 0,  8,  8,  0,  0,  0, 0, 0] },
+  { sector:'Scratch', gender:'Men', desc:'Hosting Stag',       rounds:[ 0, 0, 0, 0, 0, 16,  0,  0,  0,  0, 0, 0] },
+  // Senior Scratch
+  { sector:'Senior Scratch', gender:'Men', desc:'Parkstone Trophy',       rounds:[ 0, 0, 0,10, 0,  0,  0,  0,  0,  0, 0, 0] },
+  { sector:'Senior Scratch', gender:'Men', desc:'v Senior Golf Society',   rounds:[ 0, 0, 0, 0, 0, 28,  0,  0,  0,  0, 0, 0] },
+  { sector:'Senior Scratch', gender:'Men', desc:'Friendly',               rounds:[ 0, 0, 0, 0, 0,  0, 20,  0,  0,  0, 0, 0] },
+  // Men v Ladies (Mixed)
+  { sector:'Men v Ladies', gender:'Mixed', desc:'Men v Ladies',           rounds:[ 0, 0, 0, 0,28,  0,  0,  0,  0,  0, 0, 0] },
+  // Mens
+  { sector:'Mens', gender:'Men', desc:'Border League',                     rounds:[ 0, 0, 0, 0, 0, 12, 12,  0,  0,  0, 0, 0] },
+  { sector:'Mens', gender:'Men', desc:'Friendly',                          rounds:[ 0, 0, 0, 0, 0, 58, 52,  0, 56,  0, 0, 0] },
+  // Mixed
+  { sector:'Mixed', gender:'Mixed', desc:'Friendly',                       rounds:[ 0, 0, 0, 0, 0, 60,  0, 32, 32, 32, 0, 0] },
+  { sector:'Mixed', gender:'Mixed', desc:'SEJ',                            rounds:[ 0, 0, 0, 0, 0,  0,  0,  0, 32,  0, 0, 0] },
+];
+
+const membership = { Men: 497, Ladies: 145, Total: 642 };
+
+// Sector totals
+const sectorTotals = {};
+matches.forEach(m => {
+  const total = m.rounds.reduce((a,b)=>a+b,0);
+  sectorTotals[m.sector] = (sectorTotals[m.sector]||0) + total;
+});
+
+// Monthly gender totals (mixed split 50/50)
+const monthlyMen    = new Array(12).fill(0);
+const monthlyLadies = new Array(12).fill(0);
+const monthlySectorData = {};
+
+matches.forEach(m => {
+  const key = m.sector;
+  if (!monthlySectorData[key]) monthlySectorData[key] = new Array(12).fill(0);
+  m.rounds.forEach((v,i) => {
+    monthlySectorData[key][i] += v;
+    if (m.gender === 'Men')    monthlyMen[i]    += v;
+    if (m.gender === 'Ladies') monthlyLadies[i] += v;
+    if (m.gender === 'Mixed')  { monthlyMen[i] += v/2; monthlyLadies[i] += v/2; }
+  });
+});
+
+const totalRounds = 1688;
+const actualMen    = Math.round(monthlyMen.reduce((a,b)=>a+b,0));
+const actualLadies = Math.round(monthlyLadies.reduce((a,b)=>a+b,0));
+const expectedMen    = Math.round(totalRounds * (membership.Men    / membership.Total));
+const expectedLadies = Math.round(totalRounds * (membership.Ladies / membership.Total));
+const expectedJuniors= 0;
+
+// ──────────────────────────────────────────
+// COLOURS
+// ──────────────────────────────────────────
+const sectorColors = {
+  'Elders':         '#2d6a4f',
+  'Ladies':         '#b5006a',
+  'Scratch':        '#1565c0',
+  'Senior Scratch': '#6a1e55',
+  'Men v Ladies':   '#e07b00',
+  'Mens':           '#1b5e20',
+  'Mixed':          '#f4a100',
+};
+
+// ──────────────────────────────────────────
+// CHART 1: Rounds by sector (horizontal bar)
+// ──────────────────────────────────────────
+new Chart(document.getElementById('chartSector'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(sectorTotals),
+    datasets: [{
+      label: 'Rounds',
+      data: Object.values(sectorTotals),
+      backgroundColor: Object.keys(sectorTotals).map(s => sectorColors[s] || '#999'),
+      borderRadius: 5,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+               tooltip: { callbacks: { label: ctx => ` ${ctx.raw} rounds` } } },
+    scales: {
+      x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+      y: { ticks: { font: { size: 12, weight: '600' } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 2: Gender pie (rounds)
+// ──────────────────────────────────────────
+new Chart(document.getElementById('chartGenderPie'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Men (incl. ½ Mixed)','Ladies (incl. ½ Mixed)'],
+    datasets: [{
+      data: [actualMen, actualLadies],
+      backgroundColor: ['#1565c0','#b5006a'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.raw} rounds (${(ctx.raw/totalRounds*100).toFixed(1)}%)`
+        }
+      }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 3: Actual vs Target grouped bar
+// ──────────────────────────────────────────
+new Chart(document.getElementById('chartTarget'), {
+  type: 'bar',
+  data: {
+    labels: ['Men','Ladies'],
+    datasets: [
+      {
+        label: 'Actual Rounds',
+        data: [actualMen, actualLadies],
+        backgroundColor: ['#2d6a4f','#b5006a'],
+        borderRadius: 5,
+      },
+      {
+        label: 'Expected (membership %)',
+        data: [expectedMen, expectedLadies],
+        backgroundColor: ['rgba(45,106,79,0.25)','rgba(181,0,106,0.25)'],
+        borderColor: ['#2d6a4f','#b5006a'],
+        borderWidth: 2,
+        borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} rounds` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 12 } } },
+      y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 4: Sector gender composition
+// ──────────────────────────────────────────
+const sectors = Object.keys(sectorTotals);
+const sectorMen = [], sectorLadies = [];
+sectors.forEach(s => {
+  const sMatches = matches.filter(m => m.sector === s);
+  let men = 0, ladies = 0;
+  sMatches.forEach(m => {
+    const t = m.rounds.reduce((a,b)=>a+b,0);
+    if (m.gender==='Men')    men    += t;
+    if (m.gender==='Ladies') ladies += t;
+    if (m.gender==='Mixed')  { men += t/2; ladies += t/2; }
+  });
+  sectorMen.push(Math.round(men));
+  sectorLadies.push(Math.round(ladies));
+});
+
+new Chart(document.getElementById('chartSectorGender'), {
+  type: 'bar',
+  data: {
+    labels: sectors,
+    datasets: [
+      { label: 'Men', data: sectorMen, backgroundColor: '#1565c0', borderRadius: 4 },
+      { label: 'Ladies', data: sectorLadies, backgroundColor: '#b5006a', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } },
+    scales: {
+      x: { stacked: true, ticks: { font: { size: 10 } } },
+      y: { stacked: true, grid: { color: '#f0f0f0' } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 5: Monthly by sector (all sectors, stacked)
+// ──────────────────────────────────────────
+// Order: Men's sections first, then Ladies, then Mixed
+const sectorOrder = ['Elders','Scratch','Senior Scratch','Mens','Ladies','Men v Ladies','Mixed'];
+new Chart(document.getElementById('chartMonthlyGender'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: sectorOrder.map(s => ({
+      label: s,
+      data: monthlySectorData[s] || new Array(12).fill(0),
+      backgroundColor: sectorColors[s] || '#999',
+      borderRadius: 2,
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 13 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} rounds`,
+          footer: items => ` Total: ${items.reduce((s,i)=>s+i.raw,0)} rounds`
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, ticks: { font: { size: 12 } } },
+      y: { stacked: true, grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 6: Men's sections monthly (grouped bars)
+// ──────────────────────────────────────────
+const menSectionColors = {
+  'Elders':         '#2d6a4f',
+  'Scratch':        '#1565c0',
+  'Senior Scratch': '#6a1e55',
+  'Mens':           '#1b5e20',
+};
+new Chart(document.getElementById('chartMonthlySector'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: ['Elders','Scratch','Senior Scratch','Mens'].map(s => ({
+      label: s,
+      data: monthlySectorData[s] || new Array(12).fill(0),
+      backgroundColor: menSectionColors[s],
+      borderRadius: 3,
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 13 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} rounds` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } } },
+      y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 7: Monthly totals (line)
+// ──────────────────────────────────────────
+const monthlyTotals = months.map((_,i) => matches.reduce((s,m)=>s+m.rounds[i],0));
+new Chart(document.getElementById('chartMonthlyTotal'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Total Rounds',
+      data: monthlyTotals,
+      borderColor: '#2d6a4f',
+      backgroundColor: 'rgba(45,106,79,0.12)',
+      borderWidth: 3,
+      pointRadius: 5,
+      pointBackgroundColor: '#2d6a4f',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { font: { size: 11 } } },
+      y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 8: Gender comparison %
+// ──────────────────────────────────────────
+new Chart(document.getElementById('chartGenderComp'), {
+  type: 'bar',
+  data: {
+    labels: ['Men','Ladies'],
+    datasets: [
+      {
+        label: '% of Rounds',
+        data: [
+          +(actualMen/totalRounds*100).toFixed(1),
+          +(actualLadies/totalRounds*100).toFixed(1),
+        ],
+        backgroundColor: ['#1565c0','#b5006a'],
+        borderRadius: 5,
+      },
+      {
+        label: '% of Membership',
+        data: [
+          +(membership.Men/membership.Total*100).toFixed(1),
+          +(membership.Ladies/membership.Total*100).toFixed(1),
+        ],
+        backgroundColor: ['rgba(21,101,192,0.25)','rgba(181,0,106,0.25)'],
+        borderColor: ['#1565c0','#b5006a'],
+        borderWidth: 2,
+        borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 12 } } },
+      y: { max: 80, grid: { color: '#f0f0f0' }, ticks: { callback: v => v+'%', font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// CHART 9: Rounds per member
+// ──────────────────────────────────────────
+new Chart(document.getElementById('chartPerMember'), {
+  type: 'bar',
+  data: {
+    labels: ['Men','Ladies'],
+    datasets: [{
+      label: 'Rounds per Member',
+      data: [
+        +(actualMen/membership.Men).toFixed(2),
+        +(actualLadies/membership.Ladies).toFixed(2),
+      ],
+      backgroundColor: ['#1565c0','#b5006a'],
+      borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw} rounds per member` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 12 } } },
+      y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────
+// DETAILS TABLE
+// ──────────────────────────────────────────
+const tbody = document.getElementById('detailsTable');
+const genderBadge = g => {
+  const cls = g==='Men' ? 'badge-men' : g==='Ladies' ? 'badge-ladies' : 'badge-mixed';
+  return `<span class="sector-badge ${cls}">${g}</span>`;
+};
+
+// Group by sector
+const grouped = {};
+matches.forEach(m => {
+  if (!grouped[m.sector]) grouped[m.sector] = [];
+  grouped[m.sector].push(m);
+});
+
+let rowIdx = 0;
+Object.entries(grouped).forEach(([sector, rows]) => {
+  rows.forEach((m, si) => {
+    const total = m.rounds.reduce((a,b)=>a+b,0);
+    const tr = document.createElement('tr');
+    const cells = m.rounds.map(v => `<td style="text-align:center;color:${v?'#333':'#ccc'}">${v||'—'}</td>`).join('');
+    tr.innerHTML = `
+      <td><strong>${si===0 ? sector : ''}</strong></td>
+      <td>${genderBadge(m.gender)}</td>
+      <td>${m.desc}</td>
+      ${cells}
+      <td style="font-weight:700;text-align:center">${total}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  // Sector subtotal row
+  const sectorRounds = rows.reduce((acc, m) => {
+    m.rounds.forEach((v,i) => acc[i] += v);
+    return acc;
+  }, new Array(12).fill(0));
+  const sectorTotal = sectorRounds.reduce((a,b)=>a+b,0);
+  const trSub = document.createElement('tr');
+  trSub.style.cssText = 'background:#eaf4ee;font-weight:700;font-size:12px;';
+  trSub.innerHTML = `
+    <td colspan="3" style="color:#1a3c2e;padding-left:16px">↳ ${sector} Subtotal</td>
+    ${sectorRounds.map(v=>`<td style="text-align:center;color:#1a3c2e">${v||'—'}</td>`).join('')}
+    <td style="text-align:center;color:#1a3c2e">${sectorTotal}</td>
+  `;
+  tbody.appendChild(trSub);
+});
+
+// Grand total row
+const grandMonthly = new Array(12).fill(0);
+matches.forEach(m => m.rounds.forEach((v,i) => grandMonthly[i] += v));
+const trGrand = document.createElement('tr');
+trGrand.style.cssText = 'background:#1a3c2e;color:white;font-weight:700;';
+trGrand.innerHTML = `
+  <td colspan="3" style="color:white">GRAND TOTAL</td>
+  ${grandMonthly.map(v=>`<td style="text-align:center;color:white">${v||'—'}</td>`).join('')}
+  <td style="text-align:center;color:white">1,688</td>
+`;
+tbody.appendChild(trGrand);
+
+// ──────────────────────────────────────────
+// PER HEAD DATA
+// ──────────────────────────────────────────
+
+// Eligible member counts per sector type
+const eligibleMembers = {
+  'Elders':         { count: 200, label: 'Men' },
+  'Scratch':        { count: 90,  label: 'Men' },
+  'Senior Scratch': { count: 46,  label: 'Men' },
+  'Mens':           { count: 449, label: 'Men' },
+  'Ladies':         { count: 132, label: 'Ladies' },
+  'Men v Ladies':   { count: 167, label: 'Mixed' },
+  'Mixed':          { count: 167, label: 'Mixed' },
+};
+
+// Build per-head data per sector
+const perHeadData = Object.keys(sectorTotals).map(sector => {
+  const total = sectorTotals[sector];
+  const eligible = eligibleMembers[sector] || { count: 167, label: 'Mixed' };
+  const perHead = total / eligible.count;
+  // Monthly for this sector
+  const monthly = monthlySectorData[sector] || new Array(12).fill(0);
+  const peakIdx = monthly.indexOf(Math.max(...monthly));
+  const peakVal = monthly[peakIdx];
+  return {
+    sector,
+    gender: eligible.label,
+    eligible: eligible.count,
+    total,
+    perHead: +perHead.toFixed(2),
+    peakMonth: months[peakIdx],
+    peakVal,
+    peakPerHead: +(peakVal / eligible.count).toFixed(2),
+    monthly,
+  };
+}).sort((a,b) => b.perHead - a.perHead);
+
+// Chart: per-head bar (sorted)
+new Chart(document.getElementById('chartPerHead'), {
+  type: 'bar',
+  data: {
+    labels: perHeadData.map(d => d.sector),
+    datasets: [{
+      label: 'Rounds per Eligible Member',
+      data: perHeadData.map(d => d.perHead),
+      backgroundColor: perHeadData.map(d => sectorColors[d.sector] || '#999'),
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const d = perHeadData[ctx.dataIndex];
+            return [
+              ` ${ctx.raw} rounds per head`,
+              ` (${d.total} rounds ÷ ${d.eligible} ${d.gender} members)`,
+            ];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { size: 12, weight: '600' } } },
+      y: {
+        grid: { color: '#f0f0f0' },
+        ticks: { font: { size: 11 }, callback: v => v.toFixed(1) },
+        title: { display: true, text: 'Rounds per eligible member', font: { size: 11 }, color: '#666' }
+      }
+    }
+  }
+});
+
+// Monthly per-head — Men's sections individually (line chart)
+const menSectionsList = ['Elders','Scratch','Senior Scratch','Mens'];
+const menSectionLineColors = {
+  'Elders':         '#2d6a4f',
+  'Scratch':        '#1565c0',
+  'Senior Scratch': '#9c27b0',
+  'Mens':           '#1b5e20',
+};
+const menSectionDash = {
+  'Elders':         [],
+  'Scratch':        [5,3],
+  'Senior Scratch': [2,2],
+  'Mens':           [8,3],
+};
+
+new Chart(document.getElementById('chartPerHeadMonthlyMen'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: menSectionsList.map(s => ({
+      label: s,
+      data: (monthlySectorData[s] || new Array(12).fill(0)).map(v => +(v/497).toFixed(3)),
+      borderColor: menSectionLineColors[s],
+      backgroundColor: menSectionLineColors[s] + '18',
+      borderWidth: 2.5,
+      borderDash: menSectionDash[s],
+      pointRadius: 4,
+      pointBackgroundColor: menSectionLineColors[s],
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 24, usePointStyle: true } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} rds/man` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } } },
+      y: {
+        grid: { color: '#f0f0f0' },
+        ticks: { font: { size: 11 }, callback: v => v.toFixed(2) },
+        title: { display: true, text: 'Rounds / man', font: { size: 10 }, color: '#666' }
+      }
+    }
+  }
+});
+
+// Monthly per-head — Ladies competitions individually (line chart)
+const ladiesMatches = matches.filter(m => m.sector === 'Ladies');
+const ladiesCompColors = [
+  '#b5006a','#e91e8c','#880e4f','#c2185b','#f06292','#ad1457','#f48fb1','#d81b60','#ec407a','#6a0039'
+];
+new Chart(document.getElementById('chartPerHeadMonthlyLadies'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: ladiesMatches.map((m, idx) => ({
+      label: m.desc,
+      data: m.rounds.map(v => +(v/145).toFixed(3)),
+      borderColor: ladiesCompColors[idx % ladiesCompColors.length],
+      backgroundColor: ladiesCompColors[idx % ladiesCompColors.length] + '18',
+      borderWidth: 2,
+      borderDash: idx % 2 === 0 ? [] : [4,3],
+      pointRadius: 4,
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8, boxWidth: 20, usePointStyle: true } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} rds/lady` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } } },
+      y: {
+        grid: { color: '#f0f0f0' },
+        ticks: { font: { size: 11 }, callback: v => v.toFixed(2) },
+        title: { display: true, text: 'Rounds / lady', font: { size: 10 }, color: '#666' }
+      }
+    }
+  }
+});
+
+// Per-head summary table
+const phTable = document.getElementById('perHeadTable');
+const genderColour = { Men: '#1565c0', Ladies: '#b5006a', Mixed: '#e07b00' };
+perHeadData.forEach((d, idx) => {
+  const tr = document.createElement('tr');
+  const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx+1}.`;
+  const barPct = (d.perHead / perHeadData[0].perHead * 100).toFixed(0);
+  tr.innerHTML = `
+    <td><strong>${rankIcon} ${d.sector}</strong>
+      <div style="margin-top:4px;background:#e8f0eb;border-radius:3px;height:5px;width:120px;overflow:hidden">
+        <div style="width:${barPct}%;height:100%;background:${sectorColors[d.sector]||'#999'};border-radius:3px"></div>
+      </div>
+    </td>
+    <td><span class="sector-badge" style="background:${genderColour[d.gender]}22;color:${genderColour[d.gender]};font-size:11px;padding:2px 8px;border-radius:10px">${d.gender}</span></td>
+    <td style="text-align:center">${d.eligible.toLocaleString()}</td>
+    <td style="text-align:center;font-weight:600">${d.total.toLocaleString()}</td>
+    <td style="text-align:center">
+      <strong style="font-size:16px;color:${sectorColors[d.sector]||'#333'}">${d.perHead}</strong>
+    </td>
+    <td style="text-align:center">${d.peakMonth}</td>
+    <td style="text-align:center">${d.peakVal}</td>
+    <td style="text-align:center">${d.peakPerHead}</td>
+  `;
+  phTable.appendChild(tr);
+});
+
+// ──────────────────────────────────────────
+// REGISTERED PLAYERS DATA (from Matches per head.xlsx, Sheet1)
+// ──────────────────────────────────────────
+const regData = [
+  { sector: 'Elders',         registered: 100, eligible: 200, rounds: 680,  rdsPerReg: 6.80, rdsPerElig: 3.40, rating: 'V High', color: sectorColors['Elders'] },
+  { sector: 'Ladies',         registered: 101, eligible: 132, rounds: 356,  rdsPerReg: 3.52, rdsPerElig: 2.70, rating: 'High',   color: sectorColors['Ladies'] },
+  { sector: 'Mixed (Combined)',registered: 76,  eligible: 167, rounds: 216,  rdsPerReg: 2.84, rdsPerElig: 1.29, rating: 'OK',     color: sectorColors['Mixed'] },
+  { sector: 'Scratch',        registered: 90,  eligible: 90,  rounds: 188,  rdsPerReg: 2.09, rdsPerElig: 2.09, rating: 'OK',     color: sectorColors['Scratch'] },
+  { sector: 'Senior Scratch', registered: 30,  eligible: 46,  rounds: 58,   rdsPerReg: 1.93, rdsPerElig: 1.26, rating: 'OK',     color: sectorColors['Senior Scratch'] },
+  { sector: 'Mens',           registered: 210, eligible: 449, rounds: 190,  rdsPerReg: 0.90, rdsPerElig: 0.42, rating: 'V Low',  color: sectorColors['Mens'] },
+];
+
+const ratingColors = {
+  'V High': { bg: '#fce4ec', text: '#b71c1c', border: '#ef9a9a' },
+  'High':   { bg: '#fff3e0', text: '#e65100', border: '#ffcc80' },
+  'OK':     { bg: '#e8f5e9', text: '#1b5e20', border: '#a5d6a7' },
+  'V Low':  { bg: '#e3f2fd', text: '#0d47a1', border: '#90caf9' },
+};
+
+// Chart: rounds per registered player (sorted high→low, already sorted)
+new Chart(document.getElementById('chartRegPlayers'), {
+  type: 'bar',
+  data: {
+    labels: regData.map(d => d.sector),
+    datasets: [
+      {
+        label: 'Rounds per Registered Player',
+        data: regData.map(d => d.rdsPerReg),
+        backgroundColor: regData.map(d => d.color),
+        borderRadius: 6,
+        order: 2,
+      },
+      {
+        label: 'Rounds per Eligible Player',
+        data: regData.map(d => d.rdsPerElig),
+        backgroundColor: 'rgba(0,0,0,0)',
+        borderColor: regData.map(d => d.color),
+        borderWidth: 2.5,
+        borderRadius: 6,
+        type: 'bar',
+        order: 1,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 14 } },
+      tooltip: {
+        callbacks: {
+          afterBody: (items) => {
+            const d = regData[items[0].dataIndex];
+            return [
+              `Registered: ${d.registered} players`,
+              `Eligible: ${d.eligible} players`,
+              `Total rounds: ${d.rounds}`,
+              `Rating: ${d.rating}`,
+            ];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { size: 12 } } },
+      y: {
+        grid: { color: '#f0f0f0' },
+        ticks: { font: { size: 11 } },
+        title: { display: true, text: 'Rounds per player', font: { size: 11 }, color: '#666' }
+      }
+    }
+  }
+});
+
+// Chart: registered vs eligible players grouped
+new Chart(document.getElementById('chartRegVsEligible'), {
+  type: 'bar',
+  data: {
+    labels: regData.map(d => d.sector),
+    datasets: [
+      {
+        label: 'Registered Players',
+        data: regData.map(d => d.registered),
+        backgroundColor: regData.map(d => d.color),
+        borderRadius: 4,
+      },
+      {
+        label: 'Eligible Players',
+        data: regData.map(d => d.eligible),
+        backgroundColor: regData.map(d => d.color + '44'),
+        borderColor: regData.map(d => d.color),
+        borderWidth: 2,
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 14 } },
+      tooltip: {
+        callbacks: {
+          afterBody: items => {
+            const d = regData[items[0].dataIndex];
+            const conv = (d.registered / d.eligible * 100).toFixed(0);
+            return [`Conversion: ${conv}% registered vs eligible`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } } },
+      y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } },
+           title: { display: true, text: 'Number of players', font: { size: 11 }, color: '#666' } }
+    }
+  }
+});
+
+// Registered players summary table
+const regTable = document.getElementById('regPlayersTable');
+regData.forEach(d => {
+  const rc = ratingColors[d.rating];
+  const convPct = (d.registered / d.eligible * 100).toFixed(0);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><strong style="color:${d.color}">${d.sector}</strong></td>
+    <td style="text-align:center;font-weight:700">${d.rounds.toLocaleString()}</td>
+    <td style="text-align:center">${d.registered}</td>
+    <td style="text-align:center">${d.eligible} <small style="color:#999">(${convPct}% registered)</small></td>
+    <td style="text-align:center">
+      <strong style="font-size:17px;color:${d.color}">${d.rdsPerReg.toFixed(2)}</strong>
+    </td>
+    <td style="text-align:center">
+      <span style="font-size:14px;color:#666">${d.rdsPerElig.toFixed(2)}</span>
+    </td>
+    <td style="text-align:center">
+      <span style="background:${rc.bg};color:${rc.text};border:1px solid ${rc.border};
+        padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700">${d.rating}</span>
+    </td>
+  `;
+  regTable.appendChild(tr);
+});
+// Total row
+const trTot = document.createElement('tr');
+trTot.style.cssText = 'background:#1a3c2e;color:white;font-weight:700;';
+const totRounds = regData.reduce((s,d)=>s+d.rounds,0);
+const totReg    = regData.reduce((s,d)=>s+d.registered,0);
+const totElig   = regData.reduce((s,d)=>s+d.eligible,0);
+trTot.innerHTML = `
+  <td>TOTAL / AVERAGE</td>
+  <td style="text-align:center;color:white">${totRounds.toLocaleString()}</td>
+  <td style="text-align:center;color:white">${totReg}</td>
+  <td style="text-align:center;color:white">${totElig}</td>
+  <td style="text-align:center;color:white">${(totRounds/totReg).toFixed(2)}</td>
+  <td style="text-align:center;color:white">${(totRounds/totElig).toFixed(2)}</td>
+  <td></td>
+`;
+regTable.appendChild(trTot);
+
+// ──────────────────────────────────────────
+// TABS
+// ──────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>
